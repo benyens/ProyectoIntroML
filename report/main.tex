@@ -137,11 +137,7 @@ Las matrices de confusión de los tres modelos se presentan en la Fig.~\ref{fig:
 
 \begin{figure}[htbp]
 \centering
-% Reemplazar con \includegraphics[width=\columnwidth]{figures/confusion_matrices.png}
-% cuando se genere la figura desde el notebook
-\fbox{\parbox{0.9\columnwidth}{\centering\vspace{1.5cm}
-[Figura: Matrices de confusión RF (izq.) y CNN (der.)]\\
-\vspace{1.5cm}}}
+\includegraphics[width=\columnwidth]{figures/confusion_matrices.png}
 \caption{Matrices de confusión para el Random Forest con SMOTE (izquierda) y la CNN con regularización L2 y Batch Normalization (derecha). La CNN logra recall perfecto en Free-Jazz pero presenta dificultades en Big Band/Swing dado el escaso número de muestras de esa clase.}
 \label{fig:confusion}
 \end{figure}
@@ -150,10 +146,7 @@ La Fig.~\ref{fig:training} muestra las curvas de entrenamiento de la CNN. La bre
 
 \begin{figure}[htbp]
 \centering
-% Reemplazar con \includegraphics[width=\columnwidth]{figures/training_curves.png}
-\fbox{\parbox{0.9\columnwidth}{\centering\vspace{1.5cm}
-[Figura: Curvas de accuracy y loss de entrenamiento vs validación CNN]\\
-\vspace{1.5cm}}}
+\includegraphics[width=\columnwidth]{figures/training_curves.png}
 \caption{Curvas de exactitud y pérdida por época para la CNN optimizada. El EarlyStopping restaura los pesos de la época con menor pérdida de validación.}
 \label{fig:training}
 \end{figure}
