@@ -4,7 +4,7 @@ import zipfile
 from tqdm import tqdm
 
 # Configuración de rutas locales relativas
-DATA_DIR = "../data/"
+DATA_DIR = "../proy/data/"
 METADATA_ZIP = os.path.join(DATA_DIR, "fma_metadata.zip")
 AUDIO_ZIP = os.path.join(DATA_DIR, "fma_medium.zip")
 AUDIO_EXTRACT_DIR = os.path.join(DATA_DIR, "audio_jazz/")
@@ -64,6 +64,16 @@ def descargar_y_filtrar():
     except Exception as e:
         print(f"Hubo un problema al abrir el zip de audios: {e}")
         print("Asegurarse de que la descarga de fma_medium.zip se completó al 100%.")
+
+    # ==========================================
+    # FASE DE LIMPIEZA
+    # ==========================================
+    print("\n[+] Fase de Limpieza de Memoria...")
+    if os.path.exists(AUDIO_ZIP):
+        print("Borrando el archivo fma_medium.zip para recuperar 22 GB...")
+        os.remove(AUDIO_ZIP)
+        os.remove(METADATA_ZIP)
+        print("[!] Limpieza completada.")
 
 if __name__ == "__main__":
     descargar_y_filtrar()

@@ -1,3 +1,5 @@
 .venv
 __pycache__/
-data/
+data/audio_jazz/
+data/fma_metadata/
+data/test_audio/
