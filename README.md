@@ -71,7 +71,7 @@ python src/extract_features.py
 ### Paso 2: Modelado y Evaluación
 Para visualizar la comparativa de modelos, el impacto de SMOTE y el Data Augmentation de la CNN, abra el cuaderno interactivo:
 1. Asegúrese de que su entorno virtual esté seleccionado como el Kernel (núcleo) activo.
-2. Ejecute el archivo `notebooks/01_exploracion_y_modelado.ipynb`.
+2. Ejecute el archivo `notebooks/model.ipynb`.
 3. El cuaderno cargará las matrices generadas en el paso anterior de manera instantánea y mostrará los *Classification Reports* y Matrices de Confusión.
 
 ---
