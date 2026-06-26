@@ -18,7 +18,7 @@ ProyectroIntroML/
 │
 ├── data/                   # Carpeta ignorada por Git. Aquí se alojarán los audios y matrices .npy.
 ├── notebooks/              
-│   └── 01_exploracion_y_modelado.ipynb  # Cuaderno Jupyter interactivo con resultados finales.
+│   └── model.ipynb  # Cuaderno Jupyter interactivo con resultados finales.
 ├── src/                    
 │   ├── download_data.py    # Script de ingesta y extracción quirúrgica del dataset.
 │   └── extract_features.py # Pipeline de procesamiento de señal (audio a matrices).
