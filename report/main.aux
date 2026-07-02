@@ -1,0 +1,53 @@
+\relax 
+\providecommand\babel@aux[2]{}
+\@nameuse{bbl@beforestart}
+\catcode `"\active 
+\catcode `<\active 
+\catcode `>\active 
+\@nameuse{es@quoting}
+\citation{b1}
+\citation{b1}
+\babel@aux{spanish}{}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introducción y Definición del Problema}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Descripción de los Datos}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Dataset FMA}{1}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Distribución de pistas por subgénero (conjunto completo)}}{1}{}\protected@file@percent }
+\newlabel{tab:distribucion}{{I}{1}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Aumento de Datos en el Dominio del Audio}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Solución Propuesta e Implementación}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Arquitectura del Pipeline}{1}{}\protected@file@percent }
+\citation{b2}
+\citation{b3}
+\citation{b4}
+\citation{b6}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Extracción de Características}{2}{}\protected@file@percent }
+\newlabel{eq:norm}{{1}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Modelo Tabular: Random Forest con SMOTE}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Modelo Profundo: CNN con Regularización L2}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Izquierda: exactitud de entrenamiento y validación cruzada (3-fold) en función del número de árboles; la línea punteada marca el óptimo en 400 estimadores. Derecha: importancia Gini de las 15 características más discriminativas — los MFCCs de orden bajo dominan, con Rolloff y ZCR en posiciones relevantes.}}{2}{}\protected@file@percent }
+\newlabel{fig:rf_analysis}{{1}{2}{}{}{}}
+\newlabel{eq:softmax}{{2}{2}{}{}{}}
+\newlabel{eq:loss}{{3}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Ensamble Híbrido por Votación Suave}{2}{}\protected@file@percent }
+\newlabel{eq:ensemble}{{4}{2}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Metodología Experimental y Resultados}{3}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Comparativa de Métricas Finales}}{3}{}\protected@file@percent }
+\newlabel{tab:resultados}{{II}{3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Matrices de confusión para el Random Forest con SMOTE (izquierda) y la CNN con regularización L2 y Batch Normalization (derecha). La CNN logra clasificar correctamente todas las clases incluyendo Big Band/Swing (3/3), mientras el RF muestra mayor confusión entre Free-Jazz y Jazz Genérico.}}{3}{}\protected@file@percent }
+\newlabel{fig:confusion}{{2}{3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Curvas de exactitud y pérdida por época para la CNN optimizada (200 épocas). Ambas curvas convergen de forma estable: la exactitud de validación alcanza 84\% y la pérdida desciende a 0.67, sin señales de colapso de modo. La reducción progresiva del learning rate a $1.5\times 10^{-4}$ y luego a $7.5\times 10^{-5}$ fue determinante para la convergencia final.}}{3}{}\protected@file@percent }
+\newlabel{fig:training}{{3}{3}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Análisis Crítico de Resultados}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Comportamiento del Random Forest}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Convergencia de la CNN y el Rol de la Regularización}{3}{}\protected@file@percent }
+\bibcite{b1}{1}
+\bibcite{b2}{2}
+\bibcite{b3}{3}
+\bibcite{b4}{4}
+\bibcite{b5}{5}
+\bibcite{b6}{6}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}La CNN como Clasificador Equilibrado}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}El Ensamble como Refinamiento Final}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusiones y Trabajo Futuro}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Referencias}{4}{}\protected@file@percent }
+\gdef \@abspage@last{4}

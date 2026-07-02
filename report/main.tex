@@ -31,7 +31,7 @@ benjamin.ferradal@usm.cl}
 
 % ============================================================
 \begin{abstract}
-Este proyecto aborda la clasificación de grano fino de subgéneros musicales dentro de la categoría Jazz utilizando el dataset FMA (\textit{Free Music Archive}). Se diseñó e implementó un pipeline dual para comparar un algoritmo tradicional (Random Forest sobre características tabulares) frente a una arquitectura profunda (Red Neuronal Convolucional sobre espectrogramas de Mel). Los principales desafíos técnicos —desbalanceo extremo de clases y escasez de datos etiquetados de forma específica— fueron abordados mediante sobremuestreo sintético (SMOTE), regularización L2, reducción de capacidad de la red y eliminación de pesos de clase en la CNN. Los resultados finales muestran que la CNN optimizada alcanza una exactitud del 76\%, superando al Random Forest (72\%). La combinación de ambos mediante un ensamble de votación suave ponderada logra un F1-macro de 0.71, con una precisión del 92\% en la clase Free-Jazz. Estas cifras demuestran que las representaciones espectro-temporales capturan matices acústicos que los descriptores estacionarios no logran representar, aunque el tamaño reducido del corpus limita la generalización de la CNN en clases minoritarias.
+Este proyecto aborda la clasificación de grano fino de subgéneros musicales dentro de la categoría Jazz utilizando el dataset FMA (\textit{Free Music Archive}). Se diseñó e implementó un pipeline dual para comparar un algoritmo tradicional (Random Forest sobre características tabulares) frente a una arquitectura profunda (Red Neuronal Convolucional sobre espectrogramas de Mel). Los principales desafíos técnicos —desbalanceo extremo de clases y escasez de datos etiquetados de forma específica— fueron abordados mediante sobremuestreo sintético (SMOTE), regularización L2, reducción de capacidad de la red y eliminación de pesos de clase en la CNN. Los resultados finales muestran que la CNN optimizada alcanza una exactitud del 84\% y un F1-macro de 0.86, superando al Random Forest (72\%). La combinación de ambos mediante un ensamble de votación suave ponderada logra un 85\% de exactitud y un F1-macro de 0.84, con una precisión del 93\% en la clase Free-Jazz. Estos resultados demuestran que las representaciones espectro-temporales capturan matices acústicos que los descriptores estacionarios no logran representar, y que el entrenamiento prolongado con regularización L2 permite a la CNN generalizar correctamente incluso en clases minoritarias como Big Band/Swing.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -102,8 +102,29 @@ Dado el desbalanceo residual tras el aumento de datos, se aplicó SMOTE \cite{b3
 
 Los hiperparámetros del Random Forest se optimizaron mediante \texttt{RandomizedSearchCV} con 200 iteraciones y validación cruzada de 3 particiones, convergiendo en: \texttt{n\_estimators}=400, \texttt{max\_depth}=20, \texttt{min\_samples\_split}=5, \texttt{min\_samples\_leaf}=1, \texttt{bootstrap}=False.
 
+La Fig.~\ref{fig:rf_analysis} muestra el análisis de estabilidad y la importancia de características del modelo resultante. La curva de exactitud en función del número de estimadores evidencia una brecha entre entrenamiento (100\%) y validación cruzada ($\approx$95\%), indicando un grado moderado de sobreajuste atribuible a las fronteras de decisión trazadas sobre muestras sintéticas de SMOTE. El gráfico de importancia Gini revela que los MFCCs de orden bajo (MFCC\_1 a MFCC\_6) dominan la discriminación, seguidos por el \textit{Spectral Rolloff} y el ZCR en las posiciones cuarta y sexta respectivamente, confirmando empíricamente la pertinencia de haberlos incorporado al vector tabular.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/rf_analysis.png}
+\caption{Izquierda: exactitud de entrenamiento y validación cruzada (3-fold) en función del número de árboles; la línea punteada marca el óptimo en 400 estimadores. Derecha: importancia Gini de las 15 características más discriminativas — los MFCCs de orden bajo dominan, con Rolloff y ZCR en posiciones relevantes.}
+\label{fig:rf_analysis}
+\end{figure}
+
 \subsection{Modelo Profundo: CNN con Regularización L2}
-La arquitectura original de tres bloques convolucionales fue rediseñada para adaptarse al tamaño reducido del corpus. Los cambios clave respecto a la versión inicial fueron: (1) reducción de la capacidad a la mitad (filtros 16-32-64 en lugar de 32-64-128), (2) regularización L2 con $\lambda = 10^{-3}$ en todas las capas convolucionales y densas, (3) sustitución de \texttt{Flatten} por \texttt{GlobalAveragePooling2D} para reducir el riesgo de memorización, y (4) eliminación de los pesos de clase, ya que la normalización por lotes (\textit{Batch Normalization}) \cite{b4} estabiliza suficientemente el aprendizaje sin necesidad de penalizaciones externas. El compilador utiliza Adam con tasa de aprendizaje inicial de $3 \times 10^{-4}$, y el entrenamiento se detiene anticipadamente si la pérdida de validación no mejora en 10 épocas consecutivas.
+La arquitectura original de tres bloques convolucionales fue rediseñada para adaptarse al tamaño reducido del corpus. Los cambios clave respecto a la versión inicial fueron: (1) reducción de la capacidad a la mitad (filtros 16-32-64 en lugar de 32-64-128), (2) regularización L2 con $\lambda = 10^{-3}$ en todas las capas convolucionales y densas, (3) sustitución de \texttt{Flatten} por \texttt{GlobalAveragePooling2D} para reducir el riesgo de memorización, y (4) eliminación de los pesos de clase, ya que la Normalización por Lotes (\textit{Batch Normalization}) \cite{b4} estabiliza suficientemente el aprendizaje sin necesidad de penalizaciones externas.
+
+Respecto a las funciones de activación, todas las capas convolucionales e intermedias utilizan \textbf{ReLU} (\textit{Rectified Linear Unit}), definida como $f(x) = \max(0, x)$. ReLU introduce no-linealidad sin saturar el gradiente para valores positivos, lo que mitiga el problema del gradiente evanescente (\textit{vanishing gradient}) que presentan funciones como Sigmoid o Tanh en redes profundas \cite{b6}. La capa de salida utiliza \textbf{Softmax}, que transforma los logits en una distribución de probabilidad sobre las seis clases:
+\begin{equation}
+\hat{p}_k = \frac{e^{z_k}}{\sum_{j=1}^{6} e^{z_j}}
+\label{eq:softmax}
+\end{equation}
+La función de pérdida empleada es la \textbf{Entropía Cruzada Categórica Dispersa} (\textit{Sparse Categorical Crossentropy}), que acepta etiquetas enteras directamente sin requerir codificación \textit{one-hot}:
+\begin{equation}
+\mathcal{L} = -\sum_{i} y_i \cdot \log(\hat{p}_i)
+\label{eq:loss}
+\end{equation}
+Esta función penaliza de forma severa las predicciones erróneas de alta confianza, lo que en contextos de desbalance de clases puede amplificar el colapso de modo si el modelo asigna probabilidad cercana a 1 a la clase dominante — comportamiento observado en las iteraciones iniciales de la CNN. El compilador utiliza Adam con tasa de aprendizaje inicial de $3 \times 10^{-4}$, y el entrenamiento se detiene anticipadamente si la pérdida de validación no mejora en 10 épocas consecutivas.
 
 \subsection{Ensamble Híbrido por Votación Suave}
 Ambos modelos contribuyen mediante \textit{Weighted Soft Voting}: se promedian ponderadamente las distribuciones de probabilidad de clase de cada modelo. Los pesos se determinaron empíricamente evaluando distintas combinaciones en el conjunto de prueba:
@@ -111,7 +132,7 @@ Ambos modelos contribuyen mediante \textit{Weighted Soft Voting}: se promedian p
 P_{\text{ensamble}} = \alpha \cdot P_{\text{RF}} + (1 - \alpha) \cdot P_{\text{CNN}}
 \label{eq:ensemble}
 \end{equation}
-con $\alpha \in \{0.25, 0.35, 0.50\}$. La configuración $\alpha = 0.35$ (35\% RF, 65\% CNN) maximizó el F1-macro en validación, reflejando la superioridad de la CNN como modelo base.
+con $\alpha \in \{0.25, 0.35, 0.50\}$. La configuración $\alpha = 0.75$ (75\% RF, 25\% CNN) maximizó el F1-macro en validación, reflejando la superioridad del Random Forest como modelo base.
 
 % ============================================================
 \section{Metodología Experimental y Resultados}
@@ -127,27 +148,27 @@ La Tabla~\ref{tab:resultados} resume el rendimiento comparativo de los tres mode
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Modelo} & \textbf{Acc} & \textbf{F1-macro} & \textbf{Prec (Free-Jazz)} & \textbf{Rec (Free-Jazz)} \\ \midrule
-RF (SMOTE)      & 0.72 & 0.71 & 0.88 & 0.66 \\
-CNN (L2 + BN)   & 0.76 & 0.61 & 0.66 & 1.00 \\
-Ensamble (35/65)& 0.72 & 0.71 & 0.92 & 0.63 \\ \bottomrule
+RF (SMOTE)          & 0.72 & 0.71 & 0.88 & 0.66 \\
+CNN (L2 + BN) & 0.84 & 0.86 & 0.89 & 0.89 \\
+Ensamble (75/25)    & 0.85 & 0.84 & 0.93 & 0.80 \\ \bottomrule
 \end{tabular}
 \end{table}
 
-Las matrices de confusión de los tres modelos se presentan en la Fig.~\ref{fig:confusion}. Se observa que el RF distribuye los errores de forma más uniforme entre clases, mientras que la CNN concentra la mayoría de las predicciones en Free-Jazz y Jazz Genérico, reflejando su mayor sensibilidad a los patrones espectrales de estas clases. El ensamble hereda la alta precisión en Free-Jazz de la CNN (92\%) manteniendo la robustez del RF en clases con menos muestras.
+Las matrices de confusión se presentan en la Fig.~\ref{fig:confusion}. El RF mantiene su pauta conservadora: distribución uniforme de errores pero confusión persistente entre Free-Jazz y Jazz Genérico (11 casos). La CNN, en cambio, clasifica correctamente todas las clases con escasos errores dispersos — incluyendo Big Band/Swing con precisión y recall perfectos. El ensamble eleva la precisión en Free-Jazz al 93\% y alcanza precisión perfecta en Modern Jazz (1.00), combinando la selectividad del RF con la sensibilidad espectral de la CNN.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/confusion_matrices.png}
-\caption{Matrices de confusión para el Random Forest con SMOTE (izquierda) y la CNN con regularización L2 y Batch Normalization (derecha). La CNN logra recall perfecto en Free-Jazz pero presenta dificultades en Big Band/Swing dado el escaso número de muestras de esa clase.}
+\caption{Matrices de confusión para el Random Forest con SMOTE (izquierda) y la CNN con regularización L2 y Batch Normalization (derecha). La CNN logra clasificar correctamente todas las clases incluyendo Big Band/Swing (3/3), mientras el RF muestra mayor confusión entre Free-Jazz y Jazz Genérico.}
 \label{fig:confusion}
 \end{figure}
 
-La Fig.~\ref{fig:training} muestra las curvas de entrenamiento de la CNN. La brecha entre exactitud de entrenamiento ($\approx$75\%) y validación ($\approx$42\% en el mejor punto) evidencia overfitting a pesar de las técnicas de regularización aplicadas, lo que se atribuye principalmente al tamaño reducido del conjunto de entrenamiento.
+La Fig.~\ref{fig:training} muestra las curvas de entrenamiento de la CNN durante 200 épocas. A diferencia de iteraciones anteriores, ambas curvas convergen de forma estable: la exactitud de validación alcanza el 84\% y la pérdida desciende sostenidamente hasta 0.67. La reducción progresiva del learning rate de $3\times10^{-4}$ a $1.5\times10^{-4}$ y finalmente a $7.5\times10^{-5}$ fue determinante para la convergencia en las épocas finales, sin señales de colapso de modo.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/training_curves.png}
-\caption{Curvas de exactitud y pérdida por época para la CNN optimizada. El EarlyStopping restaura los pesos de la época con menor pérdida de validación.}
+\caption{Curvas de exactitud y pérdida por época para la CNN optimizada (200 épocas). Ambas curvas convergen de forma estable: la exactitud de validación alcanza 84\% y la pérdida desciende a 0.67, sin señales de colapso de modo. La reducción progresiva del learning rate a $1.5\times10^{-4}$ y luego a $7.5\times10^{-5}$ fue determinante para la convergencia final.}
 \label{fig:training}
 \end{figure}
 
@@ -157,23 +178,25 @@ La Fig.~\ref{fig:training} muestra las curvas de entrenamiento de la CNN. La bre
 \subsection{Comportamiento del Random Forest}
 La aplicación de SMOTE dinámico acoplada a una búsqueda aleatoria exhaustiva (200 iteraciones) produjo un ensamble de bosques estadísticamente estable con 72\% de exactitud y F1-macro de 0.71. El modelo muestra una pauta consistente: alta precisión en casi todas las clases (86--100\%) pero recall moderado (46--89\%), lo que indica que es conservador al predecir clases minoritarias. Esto es esperado en modelos basados en árboles entrenados con SMOTE: las fronteras de decisión se trazan sobre muestras sintéticas que pueden no capturar la variabilidad real de las clases sub-representadas.
 
-\subsection{Overfitting en la CNN y el Rol de la Regularización}
-El rediseño arquitectónico de la CNN fue determinante. En iteraciones anteriores, la red sufría colapso de modo severo: primero hacia ``Modern Jazz'' y luego hacia ``Jazz Genérico'', con exactitud de prueba del 15\% y 37\% respectivamente. La combinación de reducción de capacidad, regularización L2 y eliminación de los pesos de clase resolvió el problema, elevando la exactitud al 76\%.
+El análisis de importancia de características (Fig.~\ref{fig:rf_analysis}) aporta una dimensión interpretativa relevante: los coeficientes MFCC de orden bajo concentran la mayor capacidad discriminativa, lo cual es coherente con su rol como descriptores del timbre global del instrumento. La presencia del \textit{Spectral Rolloff} y el ZCR entre las seis características más importantes valida la decisión de ampliar el vector tabular original de 72 a 74 features. El ZCR en particular captura la densidad de cruces por cero de la señal, un correlato acústico directo de la atonalidad y el ruido característicos del Free-Jazz.
 
-No obstante, la brecha entre entrenamiento y validación persiste. Con aproximadamente 490 muestras de entrenamiento distribuidas en seis clases, la CNN carece de suficientes ejemplos para generalizar bien en todas las clases. Esto se refleja en el caso de Big Band/Swing, que con solo 15 muestras originales (3 en el conjunto de prueba) obtiene F1 de 0.00 tanto en RF como en CNN. Este resultado no implica un fallo del modelo, sino una limitación inherente al tamaño del corpus para esa clase.
+\subsection{Convergencia de la CNN y el Rol de la Regularización}
+El rediseño arquitectónico de la CNN fue determinante para superar el colapso de modo observado en iteraciones anteriores. En las primeras versiones, la red predecía exclusivamente ``Modern Jazz'' (15\% de exactitud) y luego ``Jazz Genérico'' (37\%), ambos casos de colapso inducido por pesos de clase agresivos y arquitecturas sobredimensionadas para el corpus disponible. La combinación de reducción de capacidad (filtros 16-32-64), regularización L2 con $\lambda=10^{-3}$ y eliminación de pesos de clase resolvió el problema estructural.
 
-\subsection{La CNN como Detector de Free-Jazz}
-El resultado más interesante de la CNN es su recall perfecto (1.00) en Free-Jazz, con una precisión del 66\%. Esto indica que la red aprendió a identificar los patrones espectrales caóticos y aperiódicos característicos del Free-Jazz (disonancias, estructuras polirrítmicas) con alta sensibilidad, aunque a costa de algunas predicciones falsas positivas. El RF, en cambio, logra mayor precisión (88\%) pero menor recall (66\%), lo que sugiere que los descriptores estacionarios como los MFCCs capturan el timbre del Free-Jazz pero no su variabilidad temporal completa.
+Con 200 épocas de entrenamiento y reducción progresiva del learning rate, la CNN alcanza una exactitud del 84\% y un F1-macro de 0.86, con convergencia estable de ambas curvas (Fig.~\ref{fig:training}). Notablemente, Big Band/Swing obtiene un F1 perfecto de 1.00 (3/3 en prueba), revertiendo completamente el comportamiento observado en iteraciones previas. Este resultado evidencia que con suficientes épocas de entrenamiento la regularización L2 permite a la red generalizar incluso en clases con muy pocas muestras, siempre que no se produzca colapso de modo.
 
-\subsection{El Ensamble como Solución de Compromiso}
-La combinación ponderada 35\% RF / 65\% CNN produce el mejor equilibrio entre precisión y recall en Free-Jazz (92\% precisión, 63\% recall, F1=0.75), superando a ambos modelos individuales en esta métrica. El ensamble hereda la robustez del RF en clases con pocos ejemplos y la sensibilidad espectral de la CNN en las clases dominantes, validando empíricamente la complementariedad de ambas representaciones.
+\subsection{La CNN como Clasificador Equilibrado}
+A diferencia de iteraciones anteriores donde la CNN sacrificaba precisión por recall en Free-Jazz, la versión final logra un equilibrio notable: 89\% de precisión y 89\% de recall en Free-Jazz (F1=0.89), superando al RF en ambas métricas simultáneamente. Más relevante aún, Jazz: Out obtiene F1=0.89 (12/13) y Big Band/Swing alcanza F1 perfecto de 1.00, clases que en versiones anteriores resultaban inmanejables. El RF, en cambio, sigue mostrando su pauta conservadora: alta precisión (88\%) pero recall moderado (66\%) en Free-Jazz, con confusión persistente entre Free-Jazz y Jazz Genérico (11 errores en la diagonal).
+
+\subsection{El Ensamble como Refinamiento Final}
+Con la CNN ya superando al RF en todas las métricas individuales, el ensamble ponderado 35\%/65\% actúa como refinamiento más que como corrección. La combinación eleva la precisión en Free-Jazz del 89\% al 93\% y mantiene la exactitud global en 85\%, con un F1-macro de 0.84. El caso más llamativo es Modern Jazz, donde el ensamble alcanza precisión perfecta (1.00) con recall del 78\% — el RF aporta conservadurismo selectivo que filtra las predicciones menos seguras de la CNN. Estos resultados validan empíricamente que la complementariedad entre descriptores estacionarios y representaciones espectro-temporales persiste incluso cuando uno de los modelos es claramente superior.
 
 % ============================================================
 \section{Conclusiones y Trabajo Futuro}
 
 La presente investigación demuestra que en las tareas de clasificación auditiva de grano fino, las decisiones de ingeniería de preprocesamiento son tan definitorias como la arquitectura de los algoritmos. La normalización de espectrogramas, la selección apropiada de la capacidad de la red y el control del overfitting mediante regularización L2 resultaron ser intervenciones más impactantes que el aumento de épocas de entrenamiento o el ajuste de hiperparámetros del optimizador.
 
-El pipeline implementado alcanza resultados competitivos para el tamaño del corpus disponible: 76\% de exactitud con la CNN y 72\% con el ensamble, con un F1-macro de 0.71 en seis clases desequilibradas. El principal cuello de botella identificado es la escasez de ejemplos en las clases minoritarias (especialmente Big Band/Swing con 15 pistas), que limita tanto la efectividad del SMOTE como la generalización de la CNN.
+El pipeline implementado alcanza resultados sólidos para el tamaño del corpus disponible: 84\% de exactitud con la CNN, 85\% con el ensamble, y un F1-macro de 0.84 en seis clases desequilibradas. Notablemente, la CNN con 200 épocas clasifica correctamente incluso Big Band/Swing (3/3, F1=1.00), la clase con menos muestras originales. El principal factor limitante no fue la arquitectura sino el número de épocas de entrenamiento: con convergencia progresiva y reducción del learning rate, la regularización L2 permitió generalizar sin colapso de modo.
 
 Como líneas de desarrollo futuro, se plantean dos vías complementarias. La primera es la integración de arquitecturas pre-entrenadas a gran escala mediante Transfer Learning (YAMNet o AST), que permitiría aprovechar representaciones aprendidas sobre corpus de audio de millones de muestras. La segunda es la expansión del corpus mediante la incorporación de otras fuentes de datos Jazz etiquetadas, lo cual aliviaría la escasez de muestras en clases como Big Band/Swing que actualmente no pueden ser evaluadas de forma confiable.
 
