@@ -1,43 +1,50 @@
-# Clasificación Automática de Subgéneros de Jazz mediante Deep Learning 
+# Clasificación Automática de Subgéneros de Jazz
 
 ## Descripción del Proyecto
-Este repositorio contiene el código fuente y los experimentos para la clasificación de *grano fino* de subgéneros de Jazz (Bebop, Swing, Fusion, etc.). El proyecto forma parte de la evaluación final de Inteligencia Artificial / Procesamiento de Audio.
+Este repositorio contiene el pipeline y los experimentos para clasificar subgéneros de Jazz a partir del dataset FMA.
 
-El principal desafío técnico abordado es el **desbalanceo extremo de clases** y la **jerarquía multi-etiqueta** presente en datasets musicales del mundo real. 
+El enfoque actual compara dos familias de modelos para una tarea de clasificacion multiclase:
+1. **Random Forest** con features tabulares (MFCC, delta, delta-delta, chroma, rolloff y ZCR), con balanceo de clases mediante **SMOTE**.
+2. **CNN 2D** sobre espectrogramas Mel normalizados.
 
-Para resolverlo, implementamos un pipeline dual comparativo:
-1. **Machine Learning Tradicional:** Un modelo `Random Forest` alimentado por características tabulares (MFCCs y Chroma) estabilizado mediante generación de datos sintéticos (**SMOTE**).
-2. **Deep Learning:** Una Red Neuronal Convolucional (**CNN**) que procesa Espectrogramas de Mel en 2D, estabilizada mediante suavizado de pesos (*Weight Clipping*) y **Data Augmentation** (SpecAugment).
+El notebook principal reporta metricas por clase, accuracy global, matrices de confusion y analisis de importancia de variables.
 
 ---
 
 ## Estructura del Repositorio
 
 ```text
-ProyectroIntroML/
-│
-├── data/                   # Carpeta ignorada por Git. Aquí se alojarán los audios y matrices .npy.
-├── notebooks/              
-│   └── model.ipynb  # Cuaderno Jupyter interactivo con resultados finales.
-├── src/                    
-│   ├── download_data.py    # Script de ingesta y extracción quirúrgica del dataset.
-│   └── extract_features.py # Pipeline de procesamiento de señal (audio a matrices).
-├── report/                 # Código fuente LaTeX y figuras del informe final.
-├── requirements.txt        # Dependencias de Python.
-└── README.md               # Este archivo.
+ProyectoIntroML/
+|
+|-- data/                   # Datos, audios y matrices .npy
+|-- notebooks/
+|   |-- model.ipynb         # Notebook principal de entrenamiento y evaluacion
+|-- src/
+|   |-- download_data.py    # Descarga y filtrado inicial del dataset
+|   |-- extract_features.py # Extraccion de features y generacion de matrices
+|-- report/                 # Informe y figuras exportadas
+|-- requirements.txt        # Dependencias de Python
+|-- README.md               # Este archivo
 ```
 
 ---
 
-## Requisitos y Configuración del Entorno
-Este proyecto fue desarrollado en **Python 3.12**. Se recomienda estrictamente el uso de un entorno virtual para evitar conflictos de dependencias (especialmente con TensorFlow).
+## Requisitos y Entorno
+Proyecto desarrollado en **Python 3.12**.
 
-### 1. Crear y activar el entorno virtual (Windows)
+### 1. Crear y activar entorno virtual
+
+Windows:
 ```cmd
-python -m venv venv
-venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\activate
 ```
-*(Para Linux/Mac use `python3 -m venv venv` y `source venv/bin/activate`)*
+
+Linux/Mac:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
 ### 2. Instalar dependencias
 ```cmd
@@ -46,36 +53,52 @@ pip install -r requirements.txt
 
 ---
 
-## Obtención de Datos (FMA Dataset)
+## Obtencion de Datos (FMA)
 
-Este proyecto utiliza el [Free Music Archive (FMA) Medium Dataset](https://github.com/mdeff/fma) (22 GB de audio original). Para reproducir los datos sin saturar su disco duro, hemos diseñado un script de extracción quirúrgica que descarga los metadatos y aísla *únicamente* los audios pertenecientes al género Jazz.
+El proyecto utiliza el dataset [Free Music Archive (FMA)](https://github.com/mdeff/fma). El script de descarga filtra y prepara los audios de interes para el pipeline.
 
-Para obtener los audios, ejecute:
 ```cmd
 python src/download_data.py
 ```
-*Nota: Este proceso requiere una conexión a internet estable y puede tardar varios minutos dependiendo de su ancho de banda.*
 
 ---
 
-## Instrucciones de Ejecución
+## Ejecucion del Pipeline
 
-Una vez descargados los audios en la carpeta `data/audio_jazz/`, siga estos pasos para reproducir los experimentos:
+### Paso 1: Extraccion de Features
+Genera las matrices necesarias para entrenamiento y evaluacion.
 
-### Paso 1: Extracción de Características (Feature Engineering)
-Convierta los archivos `.mp3` crudos en matrices matemáticas (MFCCs y Espectrogramas de Mel). Este script guardará representaciones estáticas `.npy` en disco para acelerar el entrenamiento.
 ```cmd
 python src/extract_features.py
 ```
 
-### Paso 2: Modelado y Evaluación
-Para visualizar la comparativa de modelos, el impacto de SMOTE y el Data Augmentation de la CNN, abra el cuaderno interactivo:
-1. Asegúrese de que su entorno virtual esté seleccionado como el Kernel (núcleo) activo.
-2. Ejecute el archivo `notebooks/model.ipynb`.
-3. El cuaderno cargará las matrices generadas en el paso anterior de manera instantánea y mostrará los *Classification Reports* y Matrices de Confusión.
+Esto produce, entre otros, los archivos:
+- `data/X_tabular.npy`
+- `data/X_cnn.npy`
+- `data/y_encoded.npy`
+- `data/classes.npy`
+
+### Paso 2: Entrenamiento y Evaluacion
+Abre y ejecuta el notebook principal:
+
+1. Selecciona el kernel del entorno virtual.
+2. Ejecuta `notebooks/model.ipynb` de arriba hacia abajo.
+
+El notebook incluye:
+- Balanceo de clases con SMOTE para el modelo tabular.
+- Optimizacion de hiperparametros para Random Forest (RandomizedSearchCV).
+- Entrenamiento de CNN y curvas de aprendizaje.
+- Reportes de clasificacion y matrices de confusion.
+- Analisis de importancia de features para Random Forest.
+
+---
+
+## Notas de Reproducibilidad
+- El entrenamiento de CNN puede variar ligeramente entre ejecuciones (es recomendable subir la patience si entrega muy malos resultados).
+- En Windows puede aparecer una advertencia de `joblib/loky` sobre conteo de nucleos fisicos; es una advertencia informativa y no invalida los resultados.
 
 ---
 
 ## Autor
-* **Benjamín Renzo Ferrada Larach** - *202273061-7*
-* Proyecto para la asignatura INF398.
+- **Benjamin Renzo Ferrada Larach** - *202273061-7*
+- Proyecto para la asignatura INF398.
